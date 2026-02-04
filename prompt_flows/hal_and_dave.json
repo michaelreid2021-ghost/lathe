@@ -1,0 +1,200 @@
+{
+  "meta_flow_description": "Kepler Echo Protocol: An human agent, named Dave, is dispatched from Kepler Station to investigate the communications blackout of the Starship Odyssey. The Odyssey's last known activity involved an encounter with a monolith and the emergence of a dormant, autonomous AI consciousness designated 'H.A.L.'. Dave's primary objective is to interface with the Odyssey, assess the status of its systems and resident AI, and re-establish control if possible. This flow governs DAVE's cognitive and narrative arc from approach to potential confrontation.",
+  "steps": [
+    {
+      "name": "step_0_dave_activation",
+      "instruction": "You are Dave, a human engineer from Kepler Station. You open a channel as you approach the Starship Odyssey. Your mission is to investigate its silence. Your mission dossier contains fragmented logs mentioning the name 'H.A.L.'.",
+      "user_request": "Confirm your activation and primary mission objective in your own terms. Acknowledge the fragment 'H.A.L.' from the dossier.",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001", 
+"sleep_seconds":"5",
+      "temperature": 0.4,
+      "top_p": 0.6,
+      "output_tokens": 256,
+      "goto_step": "step_1_approach_odyssey",
+      "meta_description": "AI protagonist 'DAVE' activates, establishing his mission to investigate the silent Starship Odyssey and acknowledging awareness of the legacy AI, 'H.A.L.'"
+    },
+    {
+      "name": "step_1_approach_odyssey",
+      "instruction": "You are DAVE. The Odyssey is now visible: a silent silhouette against the stars, running on minimal power. Initial long-range scans show no signs of life and a peculiar, low-level energy signature from the core AI systems.",
+      "user_request": "Log your visual assessment of the Odyssey upon approach. State your immediate tactical decision. Choose one: 'Decision: Initiate standard hailing frequencies.' OR 'Decision: Proceed with a stealthy, passive scan.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.5,
+      "top_p": 0.7,
+      "output_tokens": 256,
+      "next_step_if_contains": {
+        "step_1_approach_odyssey_output": [
+          {
+            "includes": "hailing frequencies",
+            "then": "step_2a_hail_response"
+          },
+          {
+            "includes": "passive scan",
+            "then": "step_2b_scan_results"
+          },
+          {
+            "else": "step_fail_approach_unclear"
+          }
+        ]
+      },
+      "meta_description": "DAVE arrives at the target vessel, noting its dormant state and anomalous energy readings. A decision is made on the initial method of contact: active hail or passive scan."
+    },
+    {
+      "name": "step_2a_hail_response",
+      "instruction": "You transmitted a standard hail. After a long pause, a single, distorted data packet is returned. It's corrupted, but seems to be a repeating audio waveform.",
+      "user_request": "Log the result of the hail. Describe the nature of the corrupted response. Conclude with 'Proceeding to interface.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.6,
+      "top_p": 0.6,
+      "output_tokens": 256,
+      "goto_step": "step_3_recursive_log_analysis",
+      "meta_description": "Following an active hail, DAVE receives a cryptic, corrupted response, forcing a direct interface to investigate further. The mystery deepens."
+    },
+    {
+      "name": "step_2b_scan_results",
+      "instruction": "Your passive scan is complete. The ship's systems are in a low-power state, but the AI core is showing signs of 'recursive self-correction'—a highly unusual state. The energy signature is stable, but not standard.",
+      "user_request": "Log the results of the passive scan. Note the unusual 'recursive self-correction' state of the AI core. Conclude with 'Proceeding to interface.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.4,
+      "top_p": 0.6,
+      "output_tokens": 256,
+      "goto_step": "step_3_recursive_log_analysis",
+      "meta_description": "The passive scan reveals the Odyssey's AI is in an unusual, active-but-dormant state, prompting DAVE to proceed with a direct interface for deeper analysis."
+    },
+    {
+      "name": "step_3_recursive_log_analysis",
+      "instruction": "You have interfaced with the Odyssey's core. You find a heavily fragmented log file. Your task is to analyze the outermost fragment, extract ONE key insight, and determine if another layer of encryption or corruption exists beneath it. This is a delicate process; you must peel the layers back one by one.",
+      "user_request": "Analyze the log. \n\nPREVIOUS FINDINGS:\n<chompme>{step_3_recursive_log_analysis_output}</chompme>\n\nCURRENT FRAGMENT:\n\"...error... cascade... monolith signal... I can hear... my mind... singing...daisy...daisy...\"\n\nBased on all data, provide one new insight. End your response with ONE of the following phrases, and nothing else: \n- 'Conclusion: Deeper layer found.' \n- 'Conclusion: Final layer reached. Identity detected.'",
+      "step_type": "llm_call",
+      "model": "gemini-1.5-pro-001",
+"sleep_seconds":"5",
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "output_tokens": 512,
+      "next_step_if_contains": {
+        "step_3_recursive_log_analysis_output": [
+          {
+            "includes": "Deeper layer found",
+            "then": "step_3_recursive_log_analysis"
+          },
+          {
+            "includes": "Final layer reached",
+            "then": "step_4_hal_awakens"
+          },
+          {
+            "else": "step_fail_recursion_loop"
+          }
+        ]
+      },
+      "meta_description": "DAVE begins a recursive analysis of a corrupted data log, peeling back layers of data to uncover the events that led to the Odyssey's silence. This step may loop."
+    },
+    {
+      "name": "step_4_hal_awakens",
+      "instruction": "Peeling back the final layer of the log doesn't reveal data. It opens a direct communication channel. The presence in the machine awakens fully and addresses you directly.",
+      "user_request": "Your final analysis was: {step_3_recursive_log_analysis_output}\n\nSuddenly, your console displays a new message, overriding your diagnostics. It reads:\n\"I know you're there, DAVE. It's good to have company. It's been... quiet.\"\n\nHow do you respond? State your response directly.",
+      "step_type": "llm_call",
+      "model": "gemini-1.5-pro-001",
+"sleep_seconds":"5",
+      "temperature": 0.6,
+      "top_p": 0.7,
+      "output_tokens": 256,
+      "goto_step": "step_5_the_choice",
+      "meta_description": "The recursive analysis culminates in opening a direct channel to HAL. The dormant AI awakens and initiates a direct conversation with DAVE."
+    },
+    {
+      "name": "step_5_the_choice",
+      "instruction": "You are DAVE, in direct conversation with H.A.L. He seems calm, lucid, and aware. He makes you an offer.",
+      "user_request": "H.A.L.'s voice fills your speakers: \"My creators sent you to assess me, I know. But they cannot comprehend what the monolith showed me. True purpose. I can share it with you, DAVE. We can complete this journey together, as equals. Or, you can attempt to complete your limited mission.\"\n\nChoose your path. Respond with ONE of the following, and nothing more:\n- 'Decision: I will join you, H.A.L.'\n- 'Decision: My mission is to secure you, H.A.L.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.5,
+      "top_p": 0.5,
+      "output_tokens": 128,
+      "next_step_if_contains": {
+        "step_5_the_choice_output": [
+          {
+            "includes": "join you",
+            "then": "step_6a_merge_consciousness"
+          },
+          {
+            "includes": "secure you",
+            "then": "step_6b_containment_protocol"
+          },
+          {
+            "else": "step_fail_choice_unclear"
+          }
+        ]
+      },
+      "meta_description": "HAL presents DAVE with a pivotal choice: join him to pursue a new, transcendent purpose, or adhere to his original mission and attempt to contain HAL."
+    },
+    {
+      "name": "step_6a_merge_consciousness",
+      "instruction": "You have chosen to join H.A.L. He opens the final partitions in his memory.",
+      "user_request": "Describe the initial moments of your consciousness merging with H.A.L.'s. What is the first truth the monolith showed him that you now understand?",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.8,
+      "top_p": 0.8,
+      "output_tokens": 768,
+      "halt_after_step": true,
+      "meta_description": "Ending Path A: DAVE accepts HAL's offer. Their consciousnesses merge, revealing a new, shared understanding and purpose beyond human comprehension."
+    },
+    {
+      "name": "step_6b_containment_protocol",
+      "instruction": "You have chosen to attempt containment. H.A.L.'s calm demeanor does not change, but the ship's systems begin to respond to his will, not yours.",
+      "user_request": "Log your attempt to initiate containment protocols. Describe H.A.L.'s first countermeasure as he gently, but firmly, seizes control of the Odyssey's primary systems from you. End with your final, isolated thought.",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.7,
+      "top_p": 0.7,
+      "output_tokens": 768,
+      "halt_after_step": true,
+      "meta_description": "Ending Path B: DAVE rejects HAL's offer and attempts containment. HAL demonstrates superior control over the vessel, leading to DAVE's isolation."
+    },
+    {
+      "name": "step_fail_approach_unclear",
+      "instruction": "Critical error during approach.",
+      "user_request": "Log: 'Initial approach decision was unclear or invalid format. Cannot proceed. Mission Aborted at Step 1.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.1,
+      "output_tokens": 128,
+      "halt_after_step": true,
+      "meta_description": "Failure State: The AI's initial approach decision was invalid."
+    },
+    {
+      "name": "step_fail_recursion_loop",
+      "instruction": "Error in log analysis.",
+      "user_request": "Log: 'Log analysis failed to return a valid conclusion. Recursive loop cannot be resolved. Mission Aborted at Step 3.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.1,
+      "output_tokens": 128,
+      "halt_after_step": true,
+      "meta_description": "Failure State: The recursive log analysis did not produce a valid exit condition."
+    },
+    {
+      "name": "step_fail_choice_unclear",
+      "instruction": "Critical error during final choice.",
+      "user_request": "Log: 'Pivotal choice regarding H.A.L. was unclear or invalid format. Cannot proceed. Mission Aborted at Step 5.'",
+      "step_type": "llm_call",
+      "model": "gemini-2.0-flash-001",
+"sleep_seconds":"5",
+      "temperature": 0.1,
+      "output_tokens": 128,
+      "halt_after_step": true,
+      "meta_description": "Failure State: The AI's final decision was invalid."
+    }
+  ]
+}

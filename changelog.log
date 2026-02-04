@@ -1,0 +1,6 @@
+2026-01-21
+- Feature: Implemented a batch staging and approval workflow for code revisions.
+  - Changes for multiple files are now staged as a single, atomic set.
+  - A global review panel allows for accepting or rejecting the entire set.
+  - Accepting changes archives original files and updates the AI's background context (summaries, etc.).
+  - Rejecting changes requires a reason and triggers an automated retry prompt for the AI, incorporating the feedback.

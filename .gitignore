@@ -1,0 +1,23 @@
+cred.json
+cred.bak.json
+chat_sessions/
+__pycache__/
+archive/
+raw_debug_folder/
+# Python Virtual Environments (Crucial to keep out of Git)
+venv/
+.venv/
+env/
+
+# Distribution / Packaging (If you install packages)
+build/
+dist/
+*.egg-info/
+
+# Windows System Files (Since you are on Windows)
+Thumbs.db
+ehthumbs.db
+
+# IDE Settings (Optional, but usually good to ignore)
+.vscode/
+.idea/
