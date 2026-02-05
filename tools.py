@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 # --- Configuration ---
 BASE_URL = os.environ.get("LUCIDUM_BASE_URL", "https://hackathon.lucidum.cloud/CMDB")
-AUTH_TOKEN = os.environ.get("LUCIDUM_AUTH", "Bearer VjUpJwQFNODgrCVoVtyM") 
+AUTH_TOKEN = os.environ.get("LUCIDUM_AUTH", "Bearer <token>") 
 def sess():
     s = requests.Session()
     s.headers.update({"Content-Type": "application/json", "Authorization": AUTH_TOKEN})
