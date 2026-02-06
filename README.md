@@ -70,6 +70,9 @@ This is where Lathe shines. Before any code touches your disk permanently, you e
 2.  **Install dependencies**
     ```bash
     pip install -r requirements.txt
+
+    #for anti-gravity skills support
+    git clone https://github.com/sickn33/antigravity-awesome-skills.git antigravity_skills
     ```
 
 3.  **Run the Application**
