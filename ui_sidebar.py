@@ -39,10 +39,21 @@ def new_chat_callback():
     st.session_state.session_dir = Path(f"chat_sessions/{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}")
     st.rerun()
 
-def render_model_config() -> tuple[str, bool]:
-    """Renders model selection and debug mode toggle."""
-    model_name = st.selectbox("Select Model", list(MODEL_TOKEN_LIMITS.keys()), index=0)
-    debug_mode = st.toggle("Enable Debug Mode", value=False, help="If enabled, saves raw prompt to 'raw_debug_folder'.")
+def render_model_config(parent_container) -> tuple[str, bool]:
+    """Renders model selection and debug mode toggle into the specified container."""
+    with parent_container:
+        st.header("⚙️ Configuration")
+
+        # --- Session Title Editor ---
+        st.session_state.session_title = st.text_input(
+            "Session Title",
+            value=st.session_state.session_title,
+            help="A friendly name for this chat session. Saved automatically."
+        )
+        st.divider()
+
+        model_name = st.selectbox("Select Model", list(MODEL_TOKEN_LIMITS.keys()), index=0)
+        debug_mode = st.toggle("Enable Debug Mode", value=False, help="If enabled, saves raw prompt to 'raw_debug_folder'.")
     return model_name, debug_mode
 
 def render_project_settings():
@@ -270,7 +281,7 @@ def render_artifact_manager(local_summarizer: LocalModel, system_prompts: dict):
                     level = st.session_state.artifact_context_levels.get(filename, "Background")
                     tag_map = {"Focus": "focal", "Dependency": "dependency", "Background": "background", "Exclude": "exclude"}
                     tag_name = tag_map.get(level, "background")
-                    clipboard_payload = f'<{tag_name} name="{filename}"/>'
+                    clipboard_payload = f'<{{tag_name}} name="{filename}"/>'
                     st.code(clipboard_payload, language="xml")
 
                     col1, col2, col3 = st.columns([4, 1, 1])
@@ -307,7 +318,6 @@ def render_artifact_manager(local_summarizer: LocalModel, system_prompts: dict):
                     if f"level_{filename}" in st.session_state:
                         st.session_state.artifact_context_levels[filename] = st.session_state[f"level_{filename}"]
 
-# [Include other render functions from original file unchanged: render_snippet_manager, render_provisional_context, etc.]
 def render_snippet_manager():
     """Renders the UI for captured code snippets."""
     if st.session_state.session_context.snippets:
@@ -416,3 +426,81 @@ def render_system_controls():
     if st.button("Backfill History Summaries", help="Generate laconic summaries for any turns in the history that are missing them."):
         st.session_state.run_history_compression = True
         st.rerun()
+
+def render_all_sidebar_sections(parent_container, model_ready: bool, model, local_summarizer, system_prompts: dict, debug_mode: bool, sidebar_system_instruction: str):
+    """Renders all other sidebar sections into the specified container, using a multi-column layout if not in the native sidebar."""
+    # Check if we are in full-screen mode by seeing if the parent is the main container, not the sidebar object.
+    is_fullscreen = parent_container is not st.sidebar
+
+    with parent_container:
+        if is_fullscreen:
+            # Multi-column layout for the main page view
+            col1, col2, col3 = st.columns([1, 1.2, 1])
+
+            with col1:
+                render_project_settings()
+                st.divider()
+                
+                if model_ready:
+                    render_session_management(model, system_prompts)
+                else:
+                    st.warning("Session management disabled until model is ready.")
+                
+                st.divider()
+                render_prompt_flow_selector()
+                
+            with col2:
+                if model_ready:
+                    render_artifact_manager(local_summarizer, system_prompts)
+                    render_snippet_manager()
+                else:
+                    st.warning("Artifact management disabled until model is ready.")
+
+            with col3:
+                render_provisional_context()
+                st.divider()
+                render_instruction_profiles()
+                st.divider()
+                
+                if model_ready:
+                    render_token_usage(model, sidebar_system_instruction)
+                else:
+                    st.warning("Token usage cannot be calculated as model is not ready.")
+                
+                st.divider()
+                render_system_controls()
+
+        else:
+            # Original sequential layout for the native sidebar
+            render_project_settings()
+
+            st.divider()
+            if model_ready:
+                render_session_management(model, system_prompts)
+            else:
+                st.warning("Session management disabled until model is ready.")
+
+            st.divider()
+            if model_ready:
+                render_artifact_manager(local_summarizer, system_prompts)
+                render_snippet_manager()
+            else:
+                st.warning("Artifact management disabled until model is ready.")
+
+            st.divider()
+            render_provisional_context()
+
+            st.divider()
+            render_prompt_flow_selector()
+
+            st.divider()
+            render_instruction_profiles()
+
+            st.divider()
+            if model_ready:
+                render_token_usage(model, sidebar_system_instruction)
+            else:
+                st.warning("Token usage cannot be calculated as model is not ready.")
+
+            st.divider()
+            render_system_controls()

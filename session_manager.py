@@ -313,20 +313,20 @@ class SessionContext:
                      return False, f"CRITICAL ERROR: Staging failed ({e}) AND restore from backup failed ({restore_e}).", None
             return False, f"An error occurred during staging: {e}. No backup was created.", None
 
-    def commit_candidate(self, filename: str, local_model: 'LocalModel', summary_template: str, backup_path_str: str | None):
+    def commit_candidate(self, filename: str, local_model: 'LocalModel', summary_template: str, backup_path_str: str | None, source_path_str: str | None):
         """
         Finalizes a staged change. If it's a new file, it's formally added to the session.
         If it's a modification, the backup is archived.
         """
         is_new_file = not backup_path_str
 
-        # For a new file, the source path isn't in artifacts yet. It must be derived.
-        # This is brittle. The caller should provide the source_path.
-        # For now, we assume commit is called with state from `staged_revisions` which should contain the path.
-        # Let's find the source path from artifacts, or assume it's a new file if not found.
-        source_path_str = self.artifacts.get(filename, {}).get("source_path")
-        if is_new_file and not source_path_str:
-             return False, f"Cannot commit new file '{filename}' without a source path."
+        # If source_path is not provided, try to find it in existing artifacts.
+        if not source_path_str:
+            source_path_str = self.artifacts.get(filename, {}).get("source_path")
+
+        # After trying all sources, if it's still missing, fail.
+        if not source_path_str:
+            return False, f"Cannot commit '{filename}': source path is missing."
 
         if not is_new_file:
             backup_path = Path(backup_path_str)

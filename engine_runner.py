@@ -44,9 +44,6 @@ try:
 except Exception:
     _LUCIDUM_AVAILABLE = False
 
-# IMPORT THE NEW TOOLS
-from tools import osint_threat_lookup, siem_query_executor, ticket_create_itsm, apply_security_rule, find_vulnerable_assets
-
 # ----------------------------
 # AI Model Factory
 # ----------------------------
