@@ -11,6 +11,8 @@ from ai_models import VertexAIModel, LocalModel, GeminiAPIModel, MODEL_TOKEN_LIM
 from session_manager import SessionContext
 from prompt_builder import PromptBuilder
 from engine_runner import run_flow
+from research_tool import ResearchManager
+from skill_manager import SkillManager
 import ui_sidebar
 
 # --- Configuration & Prompt Loading ---
@@ -144,6 +146,7 @@ def get_session_save_data() -> dict:
         "session_title": st.session_state.session_title,
         "staged_revisions": st.session_state.staged_revisions,
         "reviewer_memory": st.session_state.reviewer_memory,
+        "active_skills": st.session_state.active_skills,
         "source_paths": {
             fn: data.get("source_path")
             for fn, data in st.session_state.session_context.artifacts.items()
@@ -165,6 +168,12 @@ if "session_dir" not in st.session_state:
 
 if "session_context" not in st.session_state:
     st.session_state.session_context = SessionContext(st.session_state.session_dir)
+
+if "research_manager" not in st.session_state:
+    st.session_state.research_manager = ResearchManager(st.session_state.session_dir)
+
+if "skill_manager" not in st.session_state:
+    st.session_state.skill_manager = SkillManager()
 
 loaded_state = st.session_state.session_context.load_full_session_state()
 
@@ -202,6 +211,7 @@ if "meta_summary" not in st.session_state: st.session_state.meta_summary = loade
 if "use_laconic_history" not in st.session_state: st.session_state.use_laconic_history = loaded_state.get("use_laconic_history", False)
 if "staged_revisions" not in st.session_state: st.session_state.staged_revisions = loaded_state.get("staged_revisions", {})
 if "reviewer_memory" not in st.session_state: st.session_state.reviewer_memory = loaded_state.get("reviewer_memory", [])
+if "active_skills" not in st.session_state: st.session_state.active_skills = loaded_state.get("active_skills", [])
 
 # New session state for full screen sidebar mode
 if "full_screen_sidebar_mode" not in st.session_state:
@@ -536,6 +546,9 @@ if not st.session_state.full_screen_sidebar_mode:
 
         builder = PromptBuilder(
             session_context=st.session_state.session_context,
+            research_manager=st.session_state.research_manager,
+            skill_manager=st.session_state.skill_manager,
+            active_skills=st.session_state.active_skills,
             artifact_context_levels=st.session_state.artifact_context_levels,
             provisional_context_enabled=st.session_state.provisional_context_enabled,
             provisional_context_text=st.session_state.provisional_context_text,

@@ -6,11 +6,16 @@ from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from session_manager import SessionContext
+    from research_tool import ResearchManager
+    from skill_manager import SkillManager
 
 class PromptBuilder:
     """Orchestrates the construction of the final prompt for the AI."""
     def __init__(self,
                  session_context: 'SessionContext',
+                 research_manager: 'ResearchManager',
+                 skill_manager: 'SkillManager',
+                 active_skills: list,
                  artifact_context_levels: dict,
                  provisional_context_enabled: bool,
                  provisional_context_text: str,
@@ -18,6 +23,9 @@ class PromptBuilder:
                  format_timedelta: Callable[[float], str],
                  staged_revisions: dict = None):
         self.session_context = session_context
+        self.research_manager = research_manager
+        self.skill_manager = skill_manager
+        self.active_skills = active_skills
         self.artifact_context_levels = artifact_context_levels
         self.provisional_context_enabled = provisional_context_enabled
         self.provisional_context_text = provisional_context_text
@@ -35,14 +43,18 @@ class PromptBuilder:
             - The formatted text to display in the chat UI for the user's message.
         """
         temporal_context = self._get_temporal_context()
+        skills_context = self._get_skills_context()
         ai_inference_prompt, explicitly_referenced_files, ref_count = self._resolve_references(user_input)
         
+        research_context = self._get_research_context()
         general_context = self._get_general_context(explicitly_referenced_files)
         provisional_context = self._get_provisional_context()
 
         full_prompt_to_ai = (
             temporal_context +
+            skills_context +
             ai_inference_prompt +
+            research_context +
             "\n--- CURRENT GENERAL CONTEXT ---\n" +
             general_context +
             "\n" + provisional_context
@@ -65,6 +77,22 @@ class PromptBuilder:
             f"current time: {now_utc_iso}\n"
             f"time since last interaction: {self.format_timedelta(time_since_last)}.\n"
         )
+
+    def _get_skills_context(self) -> str:
+        """Returns the context from any active skills."""
+        if not self.active_skills:
+            return ""
+        
+        skills_content = []
+        for skill_id in self.active_skills:
+            content = self.skill_manager.get_skill_content(skill_id)
+            if content:
+                skills_content.append(f"--- ACTIVE SKILL: {skill_id} ---\n{content}")
+        
+        if not skills_content:
+            return ""
+            
+        return "\n".join(skills_content) + "\n\n"
 
     def _resolve_references(self, text: str) -> tuple[str, list[str], int]:
         """Finds and replaces XML-style references with their content."""
@@ -113,6 +141,13 @@ class PromptBuilder:
                 ai_inference_prompt = ai_inference_prompt.replace(full_tag_text, expanded_block)
 
         return ai_inference_prompt, explicitly_referenced_files, ref_count
+
+    def _get_research_context(self) -> str:
+        """Returns the research context string if it has content."""
+        enabled_research = self.research_manager.get_enabled_context()
+        if enabled_research and enabled_research.strip():
+            return f"\n--- RESEARCH CONTEXT ---\n{enabled_research}"
+        return ""
 
     def _get_general_context(self, explicitly_referenced_files: list[str]) -> str:
         """Gets the context string for all non-explicitly referenced artifacts."""

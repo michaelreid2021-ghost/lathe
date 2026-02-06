@@ -8,6 +8,8 @@ from pathlib import Path
 # Import types for hinting
 from ai_models import VertexAIModel, LocalModel, MODEL_TOKEN_LIMITS
 from session_manager import SessionContext
+from research_tool import ResearchManager
+from skill_manager import SkillManager
 
 def new_chat_callback():
     """Clears session state to start a new chat."""
@@ -15,6 +17,7 @@ def new_chat_callback():
     # We keep things like profiles, flows, and application-level settings.
     keys_to_reset = [
         "session_context",
+        "research_manager",
         "messages",
         "user_persona",
         "project_root",
@@ -29,6 +32,7 @@ def new_chat_callback():
         "last_interaction_time",
         "run_history_compression",
         "request_cancelled",
+        "active_skills",
     ]
     for key in keys_to_reset:
         if key in st.session_state:
@@ -154,6 +158,7 @@ def render_session_management(model: VertexAIModel, system_prompts: dict):
                 # This forces the main app's initialization logic to re-run for these keys.
                 keys_to_reset = [
                     "session_context",
+                    "research_manager",
                     "messages",
                     "user_persona",
                     "artifact_context_levels",
@@ -163,7 +168,8 @@ def render_session_management(model: VertexAIModel, system_prompts: dict):
                     "meta_summary",
                     "use_laconic_history",
                     "session_title",
-                    "staged_revisions" # Corrected from 'candidate_revision'
+                    "staged_revisions",
+                    "active_skills"
                 ]
                 for key in keys_to_reset:
                     if key in st.session_state:
@@ -188,6 +194,7 @@ def render_session_management(model: VertexAIModel, system_prompts: dict):
         "instruction_profiles": st.session_state.instruction_profiles,
         "meta_summary": st.session_state.meta_summary,
         "use_laconic_history": st.session_state.use_laconic_history,
+        "active_skills": st.session_state.active_skills,
         "source_paths": {fn: data.get("source_path") for fn, data in st.session_state.session_context.artifacts.items() if data.get("source_path")}
     }
     session_json = json.dumps(session_data, indent=2)
@@ -215,6 +222,7 @@ def render_session_management(model: VertexAIModel, system_prompts: dict):
                     st.session_state.instruction_profiles = loaded_data.get("instruction_profiles", {})
                     st.session_state.meta_summary = loaded_data.get("meta_summary", "")
                     st.session_state.use_laconic_history = loaded_data.get("use_laconic_history", False)
+                    st.session_state.active_skills = loaded_data.get("active_skills", [])
 
                     if "source_paths" in loaded_data:
                         for fn, sp in loaded_data["source_paths"].items():
@@ -317,6 +325,83 @@ def render_artifact_manager(local_summarizer: LocalModel, system_prompts: dict):
                     st.radio("Level:", level_options, index=current_level_idx, key=f"level_{filename}", horizontal=True, label_visibility="collapsed")
                     if f"level_{filename}" in st.session_state:
                         st.session_state.artifact_context_levels[filename] = st.session_state[f"level_{filename}"]
+
+def render_research_manager(local_summarizer: LocalModel, system_prompts: dict):
+    """Renders the UI for managing web research sources."""
+    st.subheader("🌐 Research Sources")
+    research_manager: ResearchManager = st.session_state.research_manager
+
+    with st.form("add_url_form", clear_on_submit=True):
+        url_input = st.text_input("Add URL for research", placeholder="https://example.com/article")
+        submitted = st.form_submit_button("Fetch & Add")
+        if submitted and url_input:
+            with st.spinner(f"Fetching {url_input}..."):
+                success, msg = research_manager.add_url(
+                    url_input,
+                    local_summarizer,
+                    system_prompts.get("file_summary_template", "Summarize: {content}")
+                )
+            if success:
+                st.toast(msg, icon="✅")
+            else:
+                st.error(msg)
+            # No need to rerun here, the form submission will trigger it.
+
+    if research_manager.sources:
+        with st.expander("Managed Sources", expanded=True):
+            sorted_sources = sorted(research_manager.sources.items(), key=lambda item: item[0])
+            for url, data in sorted_sources:
+                with st.container(border=True):
+                    st.markdown(f"**URL:** `{url}`")
+                    st.caption(f"Status: {data.get('status', 'Unknown')}")
+                    
+                    if data.get('summary'):
+                        with st.popover("Show Summary"):
+                            st.markdown(data['summary'])
+
+                    c1, c2 = st.columns([0.7, 0.3])
+                    with c1:
+                        def toggle_callback(url_to_toggle):
+                            new_state = st.session_state[f"toggle_{url_to_toggle}"]
+                            research_manager.toggle_source(url_to_toggle, new_state)
+
+                        st.toggle(
+                            "Include in Context",
+                            value=data.get("enabled", False),
+                            key=f"toggle_{url}",
+                            on_change=toggle_callback,
+                            args=(url,)
+                        )
+                    with c2:
+                        def remove_callback(url_to_remove):
+                            research_manager.remove_source(url_to_remove)
+                            st.rerun()
+
+                        st.button("Remove", key=f"remove_{url}", on_click=remove_callback, args=(url,), use_container_width=True)
+
+def render_skill_manager():
+    """Renders the UI for selecting Antigravity skills."""
+    st.subheader("🌌 Antigravity Skills")
+    skill_manager: SkillManager = st.session_state.skill_manager
+
+    if not skill_manager.skills_found:
+        st.warning("Antigravity skills repository not found. Please run:\n\n`git clone https://github.com/sickn33/antigravity-awesome-skills.git antigravity_skills`")
+        return
+
+    all_skill_options = []
+    for category, skills in skill_manager.get_all_skills().items():
+        for skill_id, skill_data in skills.items():
+            # Format for display: [Category] Skill Name
+            display_name = f"[{category}] {skill_data['name']}"
+            all_skill_options.append(display_name)
+
+    # We store the display name in the session state
+    st.session_state.active_skills = st.multiselect(
+        "Activate Skills for Next Prompt",
+        options=sorted(all_skill_options),
+        default=st.session_state.get('active_skills', []),
+        help="Select skills to be injected into the context for the next AI generation."
+    )
 
 def render_snippet_manager():
     """Renders the UI for captured code snippets."""
@@ -452,9 +537,14 @@ def render_all_sidebar_sections(parent_container, model_ready: bool, model, loca
             with col2:
                 if model_ready:
                     render_artifact_manager(local_summarizer, system_prompts)
+                    st.divider()
+                    render_research_manager(local_summarizer, system_prompts)
+                    st.divider()
+                    render_skill_manager()
+                    st.divider()
                     render_snippet_manager()
                 else:
-                    st.warning("Artifact management disabled until model is ready.")
+                    st.warning("Artifact & Research management disabled until model is ready.")
 
             with col3:
                 render_provisional_context()
@@ -483,9 +573,14 @@ def render_all_sidebar_sections(parent_container, model_ready: bool, model, loca
             st.divider()
             if model_ready:
                 render_artifact_manager(local_summarizer, system_prompts)
+                st.divider()
+                render_research_manager(local_summarizer, system_prompts)
+                st.divider()
+                render_skill_manager()
+                st.divider()
                 render_snippet_manager()
             else:
-                st.warning("Artifact management disabled until model is ready.")
+                st.warning("Artifact & Research management disabled until model is ready.")
 
             st.divider()
             render_provisional_context()
